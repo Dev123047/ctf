@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the CTF</h1>
+
+        <div id="auth-section">
+            <div id="login-form-container">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" required>
+                    <label for="login-token">One-Time Token:</label>
+                    <input type="text" id="login-token" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>Don't have an account? <a href="#" id="show-register-form">Register here</a></p>
+            </div>
+
+            <div id="registration-form-container" style="display: none;">
+                <h2>Register</h2>
+                <form id="registration-form">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" required>
+                    <label for="register-name">Name (Team Name):</label>
+                    <input type="text" id="register-name" required>
+                    <button type="submit">Register</button>
+                </form>
+                <p>Already have an account? <a href="#" id="show-login-form">Login here</a></p>
+            </div>
+
+            <p id="auth-message" class="message"></p>
+        </div>
+
+        <div id="user-content" style="display: none;">
+            <button id="logout-button">Logout</button>
+            <h2>Welcome, <span id="user-name"></span>!</h2>
+            <p>Your current score: <span id="user-score">0</span></p>
+
+            <h3>Solved Challenges</h3>
+            <ul id="solved-challenges-list">
+                </ul>
+
+            <hr>
+            <h2>Challenges</h2>
+            <div id="challenges-container">
+                </div>
+
+            <hr>
+            <h2>Submit Flag</h2>
+            <form id="flag-submission-form">
+                <label for="submission-challenge-id">Challenge ID:</label>
+                <input type="text" id="submission-challenge-id" readonly required>
+                <label for="submission-flag">Flag:</label>
+                <input type="text" id="submission-flag" required>
+                <button type="submit">Submit Flag</button>
+            </form>
+            <p id="submission-message" class="message"></p>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

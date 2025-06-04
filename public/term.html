@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My e-Portfolio!</title>
+    <link rel="stylesheet" href="style2.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css"/>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js" ></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js" ></script>
+    <script src="script2.js" type="module"></script>
+    <script src="errors.js" defer></script>
+    <script src="antierrors.js" defer></script>
+</head>
+<body>
+    <div class="container" id="container">
+        <div class="row-flex-container" id="GUIContainer">
+            <div class="row-item" id="dirStructure"></div>
+            <div class="verticleResizer" id="dirStructure_contents_resizer"></div>
+            <div class="row-item" id="contents">
+                <div class="column-flex-container" id="contentsContainer">
+                    <div class="column-item" id="currentLocation"></div>
+                    <div class="horizontalResizer" id = "currentLocation_locationContents_resizer"></div>
+                    <div class="column-item" id="locationContents">Select a file to view its content.</div>
+                </div>
+            </div>
+        </div>
+        <div class="horizontalResizer" id="GUIContainer_terminalContainer_resizer"></div>
+        <div class="column-flex-container" id="terminalContainer">
+            <div class="column-item" id="terminal">
+            </div>
+            <style>
+                @font-face {
+                    font-family: CascadiaCode;
+                    src: url(CascadiaCode.ttf);
+                }
+                .terminal {
+                    --color: rgba(0, 200, 0, 0.99);
+                    --glow: 1;
+                    --font: CascadiaCode;
+                    --size: 1.5;
+                    
+                } 
+                .cmd-prompt {
+                    --color: blue;
+                }   
+                .cmd{
+                    --color: red;
+                }
+                :root {
+                    --background: #0a1242;
+                }
+            </style>
+            <script>
+                
+                function change(cwd) {
+                    $('#currentLocation').html(cwd.split("/").at(-1)+" ["+cwd+"]");
+                }
+                function generateFileTree(data, parentPath = "") {
+                let treeHTML = "<ul>";
+
+                console.log("generateFileTree called with data:", data); // Debug: Inspect the input data
+                console.log("generateFileTree called with parentPath:", parentPath); // Debug: Inspect parent path
+
+                // Ensure data is an array before processing
+                if (!Array.isArray(data)) {
+                    console.error("generateFileTree received non-array data:", data);
+                    return "<ul><li>Error: Invalid data format for tree generation.</li></ul>";
+                }
+
+                // Explicitly separate paths/directories from the last element (which is the content map object)
+                // .slice(0, data.length - 1) creates a new array containing all elements EXCEPT the last one.
+                const pathsAndDirs = data.slice(0, data.length - 1);
+                const fileContentMap = data[data.length - 1]; // This is the object with file contents (e.g., {"readme.txt": "..."})
+
+                // Optional: Check if the last element is indeed an object (the content map)
+                if (typeof fileContentMap !== 'object' || fileContentMap === null) {
+                    console.warn("Warning: Last element of data is not a valid file content map object:", fileContentMap);
+                    // If it's not the map, this might indicate an issue in transformChallengesToDesignFormat,
+                    // but the tree generation will proceed with just the paths.
+                }
+
+                // Iterate only over the paths and sub-directories (which are guaranteed to be strings by transformChallengesToDesignFormat)
+                pathsAndDirs.forEach(item => {
+                    // This explicit type check was helpful, keeping it for robustness
+                    if (typeof item !== 'string') {
+                        console.error(`Error: Expected string path, but got type ${typeof item} for item:`, item);
+                        treeHTML += `<li>Error: Invalid item in list: ${String(item)} (expected path string)</li>`;
+                        return; // Skip this problematic item and continue with the next
+                    }
+
+                    let itemPath = parentPath ? `${parentPath}/${item.split("/").pop()}` : item;
+                    let fileName = item.split("/").pop(); // This will now correctly be called on a string
+                    let icon = "🗀"; // Default icon for directories
+
+                    // Ensure 'transformedChallenges' is accessible globally or passed here.
+                    // This line assumes 'transformedChallenges' is a global variable holding your entire transformed design data.
+
+                    if (item in current_data) {
+                    // This 'item' is a directory (e.g., "/hacker/category1")
+                    icon = "🗀";
+                    treeHTML += `<li class="directory" data-path="${itemPath}">
+                                            <span>${icon} ${fileName}</span>
+                                            ${generateFileTree(current_data[item], itemPath)}
+                                        </li>`;
+                    } else {
+                    // This 'item' is a file (e.g., "/hacker/category1/puzzle1/puzzle1.txt")
+                    if (fileName.endsWith(".txt")) {
+                        icon = "🗎"; // Text file icon
+                    } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+                        icon = "📷"; // Image file icon
+                    }
+
+                    treeHTML += `<li class="file" data-path="${itemPath}">
+                                            <span>${icon} ${fileName}</span>
+                                        </li>`;
+                    }
+                });
+
+                treeHTML += "</ul>";
+                return treeHTML;
+                }
+                function renderFileTree() {
+                    const dirStructure = document.getElementById("dirStructure");
+                    dirStructure.innerHTML = generateFileTree(current_data["/hacker"], "/hacker");
+                }
+                function handleFileClicks() {
+                    document
+                    .getElementById("dirStructure")
+                    .addEventListener("click", (e) => {
+                        const target = e.target.closest("li");
+                        if (target) {
+                        const path = target.dataset.path;
+
+                        if (target.classList.contains("directory")) {
+                            // Toggle visibility of nested content
+                            const nestedList = target.querySelector("ul");
+                            if (nestedList) {
+                            nestedList.style.display =
+                                nestedList.style.display === "none" ? "block" : "none";
+                            }
+
+                            // Update current location
+                            const currentLocation =
+                            document.getElementById("currentLocation");
+                            currentLocation.textContent = path.split("/").at(-1)+" ["+path+"]";
+                            const locationContents = document.getElementById("locationContents");
+                            locationContents.innerHTML = "Select a file to view its content.";
+                        } else if (target.classList.contains("file")) {
+                            // Display file content in locationContents
+                            const fileName = path.split("/").pop();
+                            const parentPath = path.slice(0, path.lastIndexOf("/"));
+                            const fileContent =
+                            current_data[parentPath][
+                                current_data[parentPath].length - 1
+                            ][fileName];
+
+                            const locationContents =
+                            document.getElementById("locationContents");
+                            locationContents.innerHTML =
+                            fileContent || "File is empty.";
+
+                            // Update current location
+                            const currentLocation =
+                            document.getElementById("currentLocation");
+                            currentLocation.textContent = path.split("/").at(-1)+" ["+path+"]";
+                        }
+                        }
+                    });
+                }
+
+                var initialized = "True";
+                var current_username = "hacker";
+                var current_data = "";
+                var d = cwd;
+                var x = '';
+                var out1 = [];
+                var cwd = '/hacker';
+                var prompt1 = () => "hacker@testctf: "+cwd+"$";
+                var initalize = true;
+                change(cwd);
+                var current_data = {
+"/hacker":["/hacker/readme.txt",{"readme.txt":"Introduction to challenge here.<br>To register enter the command 'register'.<br>To login enter the command 'login'.<br>To get the update challenges enter 'refresh'."}]
+}
+
+                let isAuthenticated = false; // Initial state
+                let currentUser = null;
+                async function checkAuthStatus() {
+                    try {
+                        const response = await fetch('/api/score');
+                        if (response.ok) {
+                            const userData = await response.json();
+                            isAuthenticated = true;
+                            currentUser = userData;
+                            return true;
+                        } else {
+                            isAuthenticated = false;
+                            currentUser = null;
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Error checking auth status:', error);
+                        isAuthenticated = false;
+                        currentUser = null;
+                        term.set_prompt('[[;red;]ctf> ] '); // Indicate network issue
+                        return false;
+                    }
+                }
+                // public/terminal.js (Updated transformChallengesToDesignFormat function)
+                // Ensure uuidv4 is imported if not already
+
+                function transformChallengesToDesignFormat(challengesArray) {
+                    const transformedData = {};
+                    const categoriesMap = new Map(); // Map to group challenges by category for easier processing
+
+                    // --- Pass 1: Group challenges by category and prepare basic paths ---
+                    challengesArray.forEach(challenge => {
+                        const cleanCategory = String(challenge.category || 'uncategorized').trim();
+                        const cleanPuzzleId = String(challenge.id || uuidv4()).trim();
+                        const categoryPath = `/hacker/${cleanCategory}`;
+                        const puzzlePath = `${categoryPath}/${cleanPuzzleId}`;
+
+                        // Initialize category array in map if not exists
+                        if (!categoriesMap.has(categoryPath)) {
+                            categoriesMap.set(categoryPath, []);
+                        }
+                        // Add the puzzle path to its category's list of puzzles
+                        categoriesMap.get(categoryPath).push(puzzlePath);
+                    });
+
+                    // --- Pass 2: Build the full transformedData structure with correct ordering ---
+
+                    // 1. Build the top-level /hacker directory
+                    const hackerContents = [];
+                    categoriesMap.forEach((_puzzles, categoryPath) => {
+                        hackerContents.push(categoryPath); // Add all category paths first
+                    });
+                    hackerContents.push("/hacker/readme.txt"); // Add the readme path
+                    hackerContents.push({"readme.txt": "Introduction to challenge here.<br>To register enter the command 'register'.<br>To login enter the command 'login'.<br>To get the update challenges enter 'refresh'."}); // Add the readme content object LAST
+                    transformedData["/hacker"] = hackerContents;
+
+                    // 2. Build each category directory and its contained puzzles
+                    categoriesMap.forEach((puzzlePaths, categoryPath) => {
+                        const cleanCategory = categoryPath.split('/').pop(); // Extract category name
+
+                        // Start building the category's directory contents
+                        const categoryDirContents = [...puzzlePaths]; // Add all puzzle paths first (copied from categoriesMap)
+                        categoryDirContents.push(`${categoryPath}/readme.txt`); // Add category readme path
+                        categoryDirContents.push({"readme.txt": `Something about ${cleanCategory} here.`}); // Add category readme content object LAST
+                        transformedData[categoryPath] = categoryDirContents;
+
+                        // 3. Build each puzzle's directory contents
+                        puzzlePaths.forEach(puzzlePath => {
+                            // Find the original challenge object to get its details (description, links)
+                            const challenge = challengesArray.find(c => String(c.id).trim() === puzzlePath.split('/').pop());
+                            if (!challenge) {
+                                console.warn(`Challenge data not found for puzzle path: ${puzzlePath}. Skipping.`);
+                                return;
+                            }
+
+                            const cleanPuzzleId = String(challenge.id || uuidv4()).trim();
+                            const puzzleContents = [];
+
+                            // Add main puzzle file path first
+                            puzzleContents.push(`${puzzlePath}/${cleanPuzzleId}.txt`);
+
+                            const linkMap = {}; // This will hold all file contents for this puzzle directory
+                            let parsedLinks = [];
+
+                            // Robust parsing of links (as previously defined)
+                            if (typeof challenge.links === 'string' && challenge.links.trim() !== '') {
+                                try {
+                                    const tempLinks = JSON.parse(challenge.links);
+                                    if (Array.isArray(tempLinks)) {
+                                        parsedLinks = tempLinks.map(link => String(link).trim()).filter(s => s.length > 0);
+                                    } else {
+                                        console.warn(`JSON.parse for challenge ${challenge.id} returned non-array type. Value:`, tempLinks);
+                                        parsedLinks = [String(tempLinks).trim()].filter(s => s.length > 0);
+                                    }
+                                } catch (e) {
+                                    console.warn(`Error parsing links for challenge ${challenge.id} (malformed JSON):`, e.message);
+                                    console.log(`Malformed links string was: "${challenge.links}"`);
+                                    parsedLinks = challenge.links.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                                }
+                            }
+
+                            // Add link file paths and their content to linkMap
+                            parsedLinks.forEach((link, index) => {
+                                const linkFileName = `${cleanPuzzleId}link${index + 1}.txt`;
+                                puzzleContents.push(`${puzzlePath}/${String(linkFileName).trim()}`); // Add link file path
+                                linkMap[String(linkFileName).trim()] = String(link).trim(); // Add link content to map
+                            });
+
+                            // Add main puzzle description content to linkMap
+                            pizza = "Puzzle ID : "+cleanPuzzleId+"<br>Points : "+challenge.points+"<br>Description : <br>"+challenge.description;
+                            linkMap[`${cleanPuzzleId}.txt`] = String(pizza || '').trim();
+                            puzzleContents.push(linkMap); // Push the content map OBJECT LAST for the puzzle directory
+                            transformedData[puzzlePath] = puzzleContents;
+                        });
+                    });
+
+                    console.log("Final transformed designChallenges object:", transformedData);
+                    return transformedData;
+                }
+                function disableRightClick() {  
+                    return false; 
+                }
+                function lsv2(d=cwd) {
+                    const out0 = current_data[d];
+                    for(let i=0; i<(out0.length-1); i++) {
+                        x = out0[i]
+                        out1.push(x)
+                        if (x in current_data) {
+                            lsv2(d=x)
+                        }
+                    }
+                    return
+                }
+                function ls(arg = "al") {
+                    out0 = current_data[cwd]
+                    out1 = []
+                    if (arg === "td") {
+                        for(let i=0; i<(out0.length)-1; i++) {
+                            out1.push(out0[i]);
+                        }
+                        return out1
+                    } else if (arg == "al") {
+                        lsv2()
+                        return out1
+                    }
+                }
+                async function reg(email,name) {
+                    try {
+                        const response = await fetch('/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, name })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            term.echo(`[[;green;]${data.message}]`);
+                            if (data.token) {
+                                term.echo(`[[;yellow;]Your One-Time Login Token: ${data.token}]`);
+                                term.echo('[[;yellow;]Please save this token. You will use it to log in.]');
+                            }
+                        } else {
+                            term.echo(`[[;red;]Error: ${data.message || 'Unknown error during registration.'}]`);
+                        }
+                    } catch (error) {
+                        console.error('Registration fetch error:', error);
+                        term.echo(`[[;red;]Network error during registration. Please check server status and your connection.]`);
+                    }
+                }
+                async function login(email,token) {
+                    try {
+                        const response = await fetch('/authenticate', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({email,token})
+                        });
+                        const data  = await response.json();
+                        if (response.ok) {
+                            await checkAuthStatus();
+                            term.echo(`[[;green;]Successfully logged in.]`);
+                            
+                        } else {
+                            term.echo( `[[;red;]Error: `+data.message+`]`);
+                        }
+                    }
+                    catch(err) {
+                        console.error('Login fetch error:', error);
+                        term.echo(`[[;red;]Network error during login. Please check server status and your connection.]`);
+                    }
+                }
+                async function fetchChallenges() {
+                    try {
+                        const response = await fetch('http://localhost:3000/api/challenges');
+
+                        if (!response.ok) {
+                            // Handle HTTP errors (e.g., 404 Not Found, 500 Internal Server Error)
+                            const errorData = await response.json();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+                        }
+
+                        const challenges = await response.json();
+                        // You can now render these challenges on your frontend
+                        return challenges;
+                    } catch (error) {
+                        console.error('Error fetching challenges:', error);
+                        alert('Failed to load challenges. Please try again.');
+                        // Handle error in your UI
+                    }
+                }
+                var term = $('#terminal').terminal({
+                    initialize: async function(){
+                        initalize = true;
+                    },
+                    ls: async function(arg) {
+                        out0 = current_data[cwd]
+                        out1 = []
+                        if (arg === "td") {
+                            for(let i=0; i<(out0.length)-1; i++) {
+                                out1.push(out0[i]);
+                            }
+                            for(let i=0;i<out1.length;i++) {
+                                this.echo(out1[i])
+                            }
+                        } else if (arg == "al") {
+                            lsv2()
+                            for(let i=0;i<out1.length;i++) {
+                                this.echo(out1[i])
+                            }
+                        }
+                    },
+                    cd: function(dir) {
+                        if (dir === "..") {
+                            const dirs = Object.keys(current_data)
+                            for (let i=0; i<(dirs.length);i++) {
+                                if (current_data[dirs[i]].includes(cwd)){
+                                    cwd = dirs[i]
+                                    this.echo(dir_changed)
+                                } else {
+                                    continue
+                                }
+                            }
+                        } else if(dir === "") {
+                            cwd = Object.keys(current_data)[0]
+                        } else {
+                            requested_dir = cwd+"/"+dir
+                            if (ls().includes(requested_dir)) {
+                                this.echo(dir_found)
+                                cwd = requested_dir;
+                                this.echo(dir_changed)
+                            } else {
+                                this.error(dir_not_found)
+                            }
+                        }
+                        change(cwd)
+                    },
+                    getcwd: function() {
+                        this.echo(cwd)
+                    },
+                    cat: function(file) {
+                        if (file in current_data[cwd][(current_data[cwd].length)-1]) {
+                            this.echo(file_found)
+                            if(current_data[cwd][(current_data[cwd].length)-1][file] != '') {
+                                this.echo('[[g; black; yellow;]'+file+']')
+                                this.echo(current_data[cwd][(current_data[cwd].length)-1][file])
+                            } else {
+                                this.error(not_authorized)
+                            }
+                        } else {
+                            this.error(file_not_found)
+                        }
+                    },
+                    register: function() {
+                        let name,email;
+                        this.read('Name : ').then( name => {
+                            this.read('Email : ').then( email => {
+                                var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+                                if(emailReg.test( email )) {
+                                    this.echo('Email validated. Email ' + email + ' Name : ' + name);
+                                    term.echo('Registering...');
+                                    reg(email,name);
+                                }
+                                else {
+                                    this.echo('Email is in wrong format');
+                                }
+                            })
+                        })
+                    },
+                    login: function() {
+                        let email,token;
+                        this.read('Email : ').then( email => {
+                            var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+                            if(emailReg.test( email )) {
+                                this.read('Token : ').then( token => {
+                                    term.echo('Logging in...');
+                                    login(email,token);
+                                })
+                            }
+                            else {
+                                this.echo('Email is in wrong format');
+                            }
+                        })
+                    },
+                    refresh: async function() {
+                        if (!isAuthenticated) {
+                            term.echo('[[;red;]You need to be logged in to view challenges. Use the "login" command.]');
+                            return;
+                        }
+                        term.echo('Fetching challenges...');
+                        try {
+                            const response = await fetch('/api/challenges');
+                            if (response.ok) {
+                                const challenges = await response.json();
+                                if (challenges.length === 0) {
+                                    term.echo('[[;yellow;]No challenges available yet.]');
+                                    return;
+                                }
+                                else {
+                                    current_data = transformChallengesToDesignFormat(challenges);
+                                    renderFileTree();
+                                    handleFileClicks();
+                                }
+                            } else {
+                                term.echo('[[;red;]Error fetching challenges. You might be logged out.]');
+                                isAuthenticated = false;
+                            }
+                        } catch (error) {
+                            console.error('Challenges fetch error:', error);
+                            term.echo('[[;red;]Network error fetching challenges.]');
+                        }
+                    }
+                }, {
+                    completion: true,
+                    keymap: {
+                        ENTER: function(e, original) {
+                        var was_initalize = this.get_command().match(/^\s*initialize\s*$/);
+                            if (!initalize && !was_initalize) {
+                                this.echo('Initialize')
+                            } else {
+                                original()
+                            }
+                        }
+                    },
+                    greetings: "Welcome to Crystal Soteria"
+                });
+                term.set_prompt(prompt1);
+            </script>
+        </div>
+    </div>
+</body>
+</html>

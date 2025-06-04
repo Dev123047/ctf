@@ -1,0 +1,29 @@
+{
+  "name": "ctf-platform",
+  "version": "1.0.0",
+  "description": "A simple CTF platform backend and static frontend.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "NODE_ENV=development node app.js"
+  },
+  "keywords": [
+    "ctf",
+    "node.js",
+    "express",
+    "sqlite",
+    "security"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.13",
+    "sqlite3": "^5.1.7"
+  }
+}

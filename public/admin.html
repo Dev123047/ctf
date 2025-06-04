@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>CTF Admin Panel</h1>
+
+        <div id="auth-section">
+            <h2>Admin Login</h2>
+            <form id="admin-login-form">
+                <label for="admin-email">Email:</label>
+                <input type="email" id="admin-email" required>
+                <label for="admin-token">One-Time Token:</label>
+                <input type="text" id="admin-token" required>
+                <button type="submit">Login</button>
+            </form>
+            <p id="auth-message" class="message"></p>
+        </div>
+
+        <div id="admin-content" style="display: none;">
+            <button id="logout-button">Logout</button>
+
+            <hr>
+            <h2>Challenge Management</h2>
+
+            <h3>Add New Challenge</h3>
+            <form id="add-challenge-form">
+                <label for="challenge-id">ID (Unique, e.g., flag-1):</label>
+                <input type="text" id="challenge-id" required>
+
+                <label for="challenge-title">Title:</label>
+                <input type="text" id="challenge-title" required>
+
+                <label for="challenge-description">Description:</label>
+                <textarea id="challenge-description" rows="4" required></textarea>
+
+                <label for="challenge-points">Points:</label>
+                <input type="number" id="challenge-points" required>
+
+                <label for="challenge-level">Level:</label>
+                <select id="challenge-level" required>
+                    <option value="">Select Level</option>
+                    <option value="Warmup">Warmup</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                    <option value="Expert">Expert</option>
+                </select>
+
+                <label for="challenge-category">Category:</label>
+                <select id="challenge-category" required>
+                    <option value="">Select Category</option>
+                    <option value="Web">Web</option>
+                    <option value="Crypto">Crypto</option>
+                    <option value="Reverse Engineering">Reverse Engineering</option>
+                    <option value="Pwn">Pwn</option>
+                    <option value="Forensics">Forensics</option>
+                    <option value="Misc">Misc</option>
+                </select>
+
+                <label for="challenge-links">Links (Comma-separated URLs):</label>
+                <input type="text" id="challenge-links" placeholder="e.g., https://example.com/link1, https://example.com/link2">
+
+                <label for="challenge-flag">Flag (Plaintext):</label>
+                <input type="text" id="challenge-flag" required>
+                <button type="submit">Add Challenge</button>
+            </form>
+            <p id="add-challenge-message" class="message"></p>
+
+            <h3>Existing Challenges</h3>
+            <table id="challenges-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Points</th>
+                        <th>Level</th>
+                        <th>Category</th>
+                        <th>Links</th> <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <p id="challenge-action-message" class="message"></p>
+
+            <hr>
+            <h2>User Management</h2>
+
+            <h3>All Users</h3>
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Solved Challenges</th>
+                        <th>Admin?</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <p id="user-action-message" class="message"></p>
+        </div>
+    </div>
+
+    <div id="edit-challenge-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>Edit Challenge</h3>
+            <form id="edit-challenge-form">
+                <label for="edit-challenge-id">ID:</label>
+                <input type="text" id="edit-challenge-id" readonly>
+
+                <label for="edit-challenge-title">Title:</label>
+                <input type="text" id="edit-challenge-title" required>
+
+                <label for="edit-challenge-description">Description:</label>
+                <textarea id="edit-challenge-description" rows="4" required></textarea>
+
+                <label for="edit-challenge-points">Points:</label>
+                <input type="number" id="edit-challenge-points" required>
+
+                <label for="edit-challenge-level">Level:</label>
+                <select id="edit-challenge-level" required>
+                    <option value="Warmup">Warmup</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                    <option value="Expert">Expert</option>
+                </select>
+
+                <label for="edit-challenge-category">Category:</label>
+                <select id="edit-challenge-category" required>
+                    <option value="Web">Web</option>
+                    <option value="Crypto">Crypto</option>
+                    <option value="Reverse Engineering">Reverse Engineering</option>
+                    <option value="Pwn">Pwn</option>
+                    <option value="Forensics">Forensics</option>
+                    <option value="Misc">Misc</option>
+                </select>
+
+                <label for="edit-challenge-links">Links (Comma-separated URLs):</label>
+                <input type="text" id="edit-challenge-links" placeholder="e.g., https://example.com/link1, https://example.com/link2">
+
+                <label for="edit-challenge-flag">Flag (Plaintext, will be re-hashed):</label>
+                <input type="text" id="edit-challenge-flag" placeholder="Leave blank to keep current flag (or enter new flag)">
+                <button type="submit">Update Challenge</button>
+            </form>
+            <p id="edit-challenge-message" class="message"></p>
+        </div>
+    </div>
+
+    <div id="edit-user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3>Edit User</h3>
+            <form id="edit-user-form">
+                <label for="edit-user-id">ID:</label>
+                <input type="text" id="edit-user-id" readonly>
+
+                <label for="edit-user-email">Email:</label>
+                <input type="email" id="edit-user-email" readonly>
+
+                <label for="edit-user-name">Name:</label>
+                <input type="text" id="edit-user-name" required>
+
+                <label for="edit-user-score">Score:</label>
+                <input type="number" id="edit-user-score" required>
+
+                <label for="edit-user-solved">Solved Challenges (Comma-separated IDs):</label>
+                <input type="text" id="edit-user-solved">
+
+                <div class="checkbox-container">
+                    <input type="checkbox" id="edit-user-is-admin">
+                    <label for="edit-user-is-admin">Is Admin?</label>
+                </div>
+
+                <button type="submit">Update User</button>
+            </form>
+            <p id="edit-user-message" class="message"></p>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
